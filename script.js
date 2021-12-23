@@ -27,10 +27,12 @@ const Peer = window.Peer;
   );
 
   const localStream = await navigator.mediaDevices
-    .getUserMedia({
-      audio: true,
-      video: true,
-    })
+    .getUserMedia(
+        Math.random() < 0.5 ? {
+            audio: true,
+            video: true,
+        } : { video:true }
+    )
     .catch(console.error);
 
   // Render local stream
