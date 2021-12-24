@@ -32,16 +32,29 @@ const handleTalking = async () => {
     () => (roomMode.textContent = getRoomModeByHash())
   );
 
-  const localStream = await navigator.mediaDevices
-    .getUserMedia(
-      requireWebcam
-        ? {
-            audio: true,
-            video: true,
-          }
-        : { video: true }
-    )
-    .catch(console.error);
+  let audioTrack;
+  let videoTrack;
+
+  if (requireWebcam) {
+    const videoStream = await navigator.mediaDevices
+      .getUserMedia({ video: true })
+      .catch(console.error);
+    videoTrack = videoStream.getVideoTracks()[0];
+
+    const audioStream = await navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .catch(console.error);
+    audioTrack = audioStream.getAudioTracks()[0];
+  } else {
+    const audioStream = await navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .catch(console.error);
+    audioTrack = audioStream.getAudioTracks()[0];
+  }
+
+  const localStream = new MediaStream(
+    requireWebcam ? [videoTrack, audioTrack] : [audioTrack]
+  );
 
   // Render local stream
   localVideo.muted = true;
@@ -63,6 +76,9 @@ const handleTalking = async () => {
       return;
     }
 
+    console.log("send stream");
+    console.log(localStream.getTracks());
+
     const room = peer.joinRoom(roomId.value, {
       mode: getRoomModeByHash(),
       stream: localStream,
@@ -77,6 +93,8 @@ const handleTalking = async () => {
 
     // Render remote stream for new peer join in the room
     room.on("stream", async (stream) => {
+      console.log("receive stream");
+      console.log(stream.getTracks());
       const newVideo = document.createElement("video");
       newVideo.srcObject = stream;
       newVideo.playsInline = true;
